@@ -4,6 +4,8 @@
 > Application web full-stack de gestion des fiches lapins pour l'association SPI LOEN
 ---
 
+#### Auteur : Aurélia PESQUET - ESIEE 2025-2026 - E5 DSIA
+
 ##  Table des matières
 
 - [Choix du sujet](#-choix-du-sujet)
@@ -298,7 +300,7 @@ Après le seed automatique, utilisez ces comptes :
 
 ---
 
-## 📁 Structure du projet
+##  Structure du projet
 
 ```
 projet/
