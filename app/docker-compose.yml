@@ -1,0 +1,85 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: spi_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - spi_network
+
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: spi_api
+    restart: unless-stopped
+    volumes:
+      - ./:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5001", "--reload"]
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - spi_network
+
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spi_seed
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "./seed_db3.py"]
+    networks:
+      - spi_network
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spi_tests
+    volumes:
+      - ./:/app
+    command: ["pytest", "tests/", "-v", "--color=yes", "--cov=.", "--cov-report=term-missing", "--cov-report=html"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    profiles:
+      - test
+    networks:
+      - spi_network
+
+volumes:
+  postgres_data_auth:
+    driver: local
+
+networks:
+  spi_network:
+    driver: bridge
